@@ -1,17 +1,20 @@
-setwd('Documents/Woolies/')
+setwd('Documents/thesis/Woolies/')
 products=read.csv('products.csv')
 train_data=read.csv('train2.csv')
 train_data$date=as.Date(train_data$date,format="%d/%m/%y")
 
 library(ggplot2)
 library(gridExtra)
-idx=train_data$product_store_id=='3e';
+library(rpart)
+
+idx=train_data$product_store_id=='3a';
 g.top=ggplot()+
   geom_line(aes(x=train_data$date[idx],y=train_data$sales[idx]))
 g.bottom=ggplot()+
   geom_line(aes(x=train_data$date[idx],y=train_data$promotion[idx]))
 
-grid.arrange(g.top,g.bottom, heights = c(4/5, 1/5)) 
+grid.arrange(g.top,g.bottom, heights = c(4/5, 1/5))
+View(cbind(train_data$date[idx],train_data$sales[idx]))
 #take the FFT
 a=fft(train_data$sales[idx])
 qplot(1:sum(idx),log(abs(a)),geom="line")
@@ -20,10 +23,43 @@ qplot(1:sum(idx),log(abs(a)),geom="line")
 err=diff(train_data$sales[idx])^2
 rmse=sqrt(sum(err)/length(err))
 
-#aggregate products and see correlations
-products=unique(train_data$product_name)
-product_shops=unique(train_data$product_store_id)
-x=matrix()
-for (i in 1:44){
-  x=rbind(x,train_data$sales[train_data$product_store_id==product_shops[i]])
+#concatenate promotions
+udate=unique(train_data$date)
+products=sort(unique(train_data$product_name))
+product_shops=sort(unique(train_data$product_store_id))
+
+x=data.frame(row.names=udate)
+for (i in 1:length(product_shops)){
+  for (j in 1:length(udate)){
+    idx=train_data$date==udate[j] & train_data$product_store_id==product_shops[i]
+    if (sum(idx))
+      x[j,i]=train_data$promotion[idx]
+  }
 }
+colnames(x)<-product_shops
+
+#View all coke promotions across stores
+View(x[,6:10])
+#View all yoplait promotions across stores
+y=x[,21:25]; View(cbind(y,rowSums(y)))
+
+#eater dates brought forward to Wednesdat
+easter=c("2013-04-03","2014-04-23","2015-04-08")
+xmas=c("2013-12-25")
+View(x[easter[1:2],])
+
+#construct matrix with past 10 weeks of sales and past 10 weeks of promotions
+idx=train_data$product_store_id=='3a';
+x=train_data[idx,]
+y_x=matrix(nrow = 0,ncol = 21);
+k=1;
+for (i in 11:106){
+  inputs=as.vector(as.matrix(x[k:(k+9),c("sales","promotion")]))
+  #browser()
+  output=x[k+10,"promotion"]
+  y_x=rbind(y_x,as.numeric(c(output,inputs)))
+  k=k+1
+}
+y_x=as.data.frame(y_x)
+fit=rpart(V1~.,method = "class",data=y_x)
+plotcp(fit)
