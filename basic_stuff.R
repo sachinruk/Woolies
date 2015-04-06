@@ -48,18 +48,4 @@ easter=c("2013-04-03","2014-04-23","2015-04-08")
 xmas=c("2013-12-25")
 View(x[easter[1:2],])
 
-#construct matrix with past 10 weeks of sales and past 10 weeks of promotions
-idx=train_data$product_store_id=='3a';
-x=train_data[idx,]
-y_x=matrix(nrow = 0,ncol = 21);
-k=1;
-for (i in 11:106){
-  inputs=as.vector(as.matrix(x[k:(k+9),c("sales","promotion")]))
-  #browser()
-  output=x[k+10,"promotion"]
-  y_x=rbind(y_x,as.numeric(c(output,inputs)))
-  k=k+1
-}
-y_x=as.data.frame(y_x)
-fit=rpart(V1~.,method = "class",data=y_x)
-plotcp(fit)
+
