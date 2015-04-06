@@ -3,10 +3,11 @@ idx=train_data$product_store_id=='3a';
 x=train_data[idx,]
 y_x=matrix(nrow = 0,ncol = 21);
 k=1;
+lag=10;
 for (i in 11:106){
-  inputs=as.vector(as.matrix(x[k:(k+9),c("sales","promotion")]))
+  inputs=as.vector(as.matrix(x[k:(k+lag-1),c("sales","promotion")]))
   #browser()
-  output=x[k+10,"promotion"]
+  output=x[k+lag,"sales"]
   y_x=rbind(y_x,as.numeric(c(output,inputs)))
   k=k+1
 }
@@ -14,12 +15,12 @@ for (i in 11:106){
 #CART trees
 y_x=as.data.frame(y_x)
 sub=sample(dim(y_x)[1],50)
-fit=rpart(V1~.,method = "class",data=y_x,subset=sub)
-plot(fit); text(fit) #visualise the tree
+fit=rpart(V1~.,method = "anova",data=y_x,subset=sub)
+#plot(fit); text(fit) #visualise the tree
+norm(as.matrix(predict(fit,y_x[-sub,-1],method="anova"))-y_x[-sub,"V1"],"2")/sqrt(46)
+#table(predict(fit,y_x[-sub,],type="anova"),y_x[-sub,"V1"])
 
-table(predict(fit,y_x[-sub,],type="class"),y_x[-sub,"V1"])
-
-sub <- c(sample(1:50, 25), sample(51:100, 25), sample(101:150, 25))
-fit <- rpart(Species ~ ., data = iris, subset = sub)
-fit
-table(predict(fit, iris[-sub,], type = "class"), iris[-sub, "Species"])
+library(randomForest)
+fit=randomForest(x=y_x[sub,-1],y=y_x[sub,1])
+#table(predict(fit,y_x[-sub,-1]),y_x[-sub,1])
+norm(as.matrix(predict(fit,y_x[-sub,-1]))-y_x[-sub,"V1"],"2")/sqrt(46)

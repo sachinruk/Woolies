@@ -48,4 +48,10 @@ easter=c("2013-04-03","2014-04-23","2015-04-08")
 xmas=c("2013-12-25")
 View(x[easter[1:2],])
 
+#check correlations
+prod_date=data.frame(matrix(nrow = 0,ncol = length(product_shops)))
+names(prod_date)=product_shops
+for (i in 1:length(udate)){
+  x=train_data[train_data$date==udate[i],c("product_store_id","sales")]
+}
 
